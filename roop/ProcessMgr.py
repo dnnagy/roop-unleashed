@@ -55,13 +55,11 @@ class ProcessMgr():
     progress_gradio = None
     total_frames = 0
 
-    
-
-
     plugins =  { 
     'faceswap'      : 'FaceSwapInsightFace',
     'mask_clip2seg' : 'Mask_Clip2Seg',
     'codeformer'    : 'Enhance_CodeFormer',
+    'restoreformer' : 'Enhance_Restoreformer',
     'gfpgan'        : 'Enhance_GFPGAN',
     'dmdnet'        : 'Enhance_DMDNet',
     'gpen'          : 'Enhance_GPEN',
@@ -444,8 +442,6 @@ class ProcessMgr():
         return np.uint8(result)
 
             
-
-
     def unload_models():
         pass
 
