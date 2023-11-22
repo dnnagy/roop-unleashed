@@ -44,9 +44,8 @@ class Enhance_Restoreformer():
         temp_frame = (temp_frame - 0.5) / 0.5
         temp_frame = np.expand_dims(temp_frame, axis=0).transpose(0, 3, 1, 2)
         
-        io_binding = self.model_restoreformer.io_binding()
-        io_binding.bind_cpu_input(self.model_inputs[0].name, temp_frame) # .astype(np.float32)
-        self.model_restoreformer.run_with_iobinding(io_binding)
+        self.io_binding.bind_cpu_input(self.model_inputs[0].name, temp_frame) # .astype(np.float32)
+        self.model_restoreformer.run_with_iobinding(self.io_binding)
         ort_outs = self.io_binding.copy_outputs_to_cpu()
         result = ort_outs[0][0]
         del ort_outs 
