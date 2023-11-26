@@ -13,8 +13,9 @@ from roop.utilities import resolve_relative_path
 # THREAD_LOCK = threading.Lock()
 
 
-class Enhance_Restoreformer():
+class Enhance_RestoreFormer():
     model_restoreformer = None
+    name = None # Idk why, but needed, see https://github.com/C0untFloyd/roop-unleashed/issues/350#issuecomment-1826484047
     devicename = None
 
     processorname = 'restoreformer'
@@ -26,13 +27,17 @@ class Enhance_Restoreformer():
             # replace Mac mps with cpu for the moment
             devicename = devicename.replace('mps', 'cpu')
             self.devicename = devicename
-            # https://github.com/harisreedhar/Face-Upscalers-ONNX/releases/download/Models/restoreformer.onnx
-            model_path = resolve_relative_path('../models/Restoreformer/restoreformer.onnx')
+            model_path = resolve_relative_path('../models/RestoreFormer/RestoreFormer.onnx')
             self.model_restoreformer = onnxruntime.InferenceSession(model_path, None, providers=roop.globals.execution_providers)
             self.model_inputs = self.model_restoreformer.get_inputs()
             model_outputs = self.model_restoreformer.get_outputs()
             self.io_binding = self.model_restoreformer.io_binding()
             self.io_binding.bind_output(model_outputs[0].name, self.devicename)
+            print(f"RestoreFormer model initialized with the following props:")
+            for j,inp in enumerate(self.model_inputs):
+                print(f"inputs[{j}]:", inp)
+            for j,oup in enumerate(model_outputs):
+                print(f"outputs[{j}]:", oup)
 
 
     def Run(self, source_faceset: FaceSet, target_face: Face, temp_frame: Frame) -> Frame:

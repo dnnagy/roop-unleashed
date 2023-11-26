@@ -30,6 +30,11 @@ class Enhance_GFPGAN():
             self.devicename = devicename
 
         self.name = self.model_gfpgan.get_inputs()[0].name
+        print(f"GFPGAN model initialized with the following props:")
+        for j,inp in enumerate(self.model_gfpgan.get_inputs()):
+            print(f"inputs[{j}]:", inp)
+        for j,oup in enumerate(self.model_gfpgan.get_outputs()):
+            print(f"outputs[{j}]:", oup)
 
     def Run(self, source_faceset: FaceSet, target_face: Face, temp_frame: Frame) -> Frame:
         # preprocess

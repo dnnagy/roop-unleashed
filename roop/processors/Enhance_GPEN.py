@@ -28,6 +28,12 @@ class Enhance_GPEN():
 
         self.name = self.model_gpen.get_inputs()[0].name
 
+        print(f"GPEN model initialized with the following props:")
+        for j,inp in enumerate(self.model_gpen.get_inputs()):
+            print(f"inputs[{j}]:", inp)
+        for j,oup in enumerate(self.model_gpen.get_outputs()):
+            print(f"outputs[{j}]:", oup)
+
     def Run(self, source_faceset: FaceSet, target_face: Face, temp_frame: Frame) -> Frame:
         # preprocess
         input_size = temp_frame.shape[1]

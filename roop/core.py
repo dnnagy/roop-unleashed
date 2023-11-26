@@ -122,8 +122,11 @@ def pre_check() -> bool:
     util.conditional_download(download_directory_path, ['https://github.com/csxmli2016/DMDNet/releases/download/v1/DMDNet.pth'])
     util.conditional_download(download_directory_path, ['https://github.com/facefusion/facefusion-assets/releases/download/models/GPEN-BFR-512.onnx'])
     
-    download_directory_path = util.resolve_relative_path('../models/Restoreformer')
-    util.conditional_download(download_directory_path, ['https://github.com/harisreedhar/Face-Upscalers-ONNX/releases/download/Models/restoreformer.onnx'])
+    download_directory_path = util.resolve_relative_path('../models/RestoreFormer')
+    util.conditional_download(download_directory_path, ['https://huggingface.co/dnnagy/RestoreFormer/resolve/main/RestoreFormer.onnx'])
+
+    download_directory_path = util.resolve_relative_path('../models/RestoreFormerPlusPlus')
+    util.conditional_download(download_directory_path, ['https://huggingface.co/dnnagy/RestoreFormerPlusPlus/resolve/main/RestoreFormerPlusPlus.onnx'])
 
     download_directory_path = util.resolve_relative_path('../models/CLIP')
     util.conditional_download(download_directory_path, ['https://huggingface.co/countfloyd/deepfake/resolve/main/rd64-uni-refined.pth'])
@@ -173,8 +176,10 @@ def get_processing_plugins(use_clip):
         processors += ",gfpgan"
     elif roop.globals.selected_enhancer == 'Codeformer':
         processors += ",codeformer"
-    elif roop.globals.selected_enhancer == 'Restoreformer':
+    elif roop.globals.selected_enhancer == 'RestoreFormer':
         processors += ",restoreformer"
+    elif roop.globals.selected_enhancer == 'RestoreFormerPlusPlus':
+        processors += ",restoreformerplusplus"
     elif roop.globals.selected_enhancer == 'DMDNet':
         processors += ",dmdnet"
     elif roop.globals.selected_enhancer == 'GPEN':

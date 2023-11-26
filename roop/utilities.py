@@ -29,9 +29,6 @@ TEMP_DIRECTORY = 'temp'
 if platform.system().lower() == 'darwin':
     ssl._create_default_https_context = ssl._create_unverified_context
 
-
-
-
 # https://github.com/facefusion/facefusion/blob/master/facefusion
 def detect_fps(target_path : str) -> float:
     fps = 24.0
@@ -40,7 +37,6 @@ def detect_fps(target_path : str) -> float:
         fps = cap.get(cv2.CAP_PROP_FPS)
     cap.release()
     return fps
-
 
 # Gradio wants Images in RGB
 def convert_to_gradio(image):

@@ -56,13 +56,14 @@ class ProcessMgr():
     total_frames = 0
 
     plugins =  { 
-    'faceswap'      : 'FaceSwapInsightFace',
-    'mask_clip2seg' : 'Mask_Clip2Seg',
-    'codeformer'    : 'Enhance_CodeFormer',
-    'restoreformer' : 'Enhance_Restoreformer',
-    'gfpgan'        : 'Enhance_GFPGAN',
-    'dmdnet'        : 'Enhance_DMDNet',
-    'gpen'          : 'Enhance_GPEN',
+        'faceswap'                  : 'FaceSwapInsightFace',
+        'mask_clip2seg'             : 'Mask_Clip2Seg',
+        'codeformer'                : 'Enhance_CodeFormer',
+        'restoreformer'             : 'Enhance_RestoreFormer',
+        'restoreformerplusplus'     : 'Enhance_RestoreFormerPlusPlus',
+        'gfpgan'                    : 'Enhance_GFPGAN',
+        'dmdnet'                    : 'Enhance_DMDNet',
+        'gpen'                      : 'Enhance_GPEN',
     }
 
     def __init__(self, progress):
@@ -389,20 +390,24 @@ class ProcessMgr():
 
         ##Transform white square back to target_img
         img_matte = cv2.warpAffine(img_matte, IM, (target_img.shape[1], target_img.shape[0]), flags=cv2.INTER_NEAREST, borderValue=0.0) 
+        
         ##Blacken the edges of face_matte by 1 pixels (so the mask in not expanded on the image edges)
         img_matte[:1,:] = img_matte[-1:,:] = img_matte[:,:1] = img_matte[:,-1:] = 0
 
         #Detect the affine transformed white area
         mask_h_inds, mask_w_inds = np.where(img_matte==255) 
+        
         #Calculate the size (and diagonal size) of transformed white area width and height boundaries
         mask_h = np.max(mask_h_inds) - np.min(mask_h_inds) 
         mask_w = np.max(mask_w_inds) - np.min(mask_w_inds)
         mask_size = int(np.sqrt(mask_h*mask_w))
+        
         #Calculate the kernel size for eroding img_matte by kernel (insightface empirical guess for best size was max(mask_size//10,10))
         # k = max(mask_size//12, 8)
         k = max(mask_size//10, 10)
         kernel = np.ones((k,k),np.uint8)
         img_matte = cv2.erode(img_matte,kernel,iterations = 1)
+        
         #Calculate the kernel size for blurring img_matte by blur_size (insightface empirical guess for best size was max(mask_size//20, 5))
         # k = max(mask_size//24, 4) 
         k = max(mask_size//20, 5) 
@@ -415,6 +420,7 @@ class ProcessMgr():
         face_matte = face_matte.astype(np.float32)/255
         img_matte = np.minimum(face_matte, img_matte)
         img_matte = np.reshape(img_matte, [img_matte.shape[0],img_matte.shape[1],1]) 
+        
         ##Transform upcaled face back to target_img
         paste_face = cv2.warpAffine(upsk_face, IM, (target_img.shape[1], target_img.shape[0]), borderMode=cv2.BORDER_REPLICATE)
         if upsk_face is not fake_face:
