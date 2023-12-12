@@ -53,11 +53,13 @@ class Enhance_RestoreFormerPlusPlus():
         ort_outs = self.io_binding.copy_outputs_to_cpu()
         result = ort_outs[0][0]
         del ort_outs 
+        
         # post-process
-        result = np.clip(result, -1, 1)
-        result = (result + 1) / 2
-        result = result.transpose(1, 2, 0) * 255.0
-        result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
+        result = np.clip(result, -1.0, 1.0)
+        result = (result + 1.0) / 2.0
+        result = result * 255.0
+        result = result.transpose(1, 2, 0)
+        #result = cv2.cvtColor(result, cv2.COLOR_RGB2BGR)
         scale_factor = int(result.shape[1] / input_size)    
         return result.astype(np.uint8), scale_factor
 

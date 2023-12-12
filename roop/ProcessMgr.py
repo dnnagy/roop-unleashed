@@ -57,7 +57,8 @@ class ProcessMgr():
 
     plugins =  { 
         'faceswap'                  : 'FaceSwapInsightFace',
-        'mask_clip2seg'             : 'Mask_Clip2Seg',
+        'mask_clip2seg_pos'         : 'Mask_Clip2SegPos',
+        'mask_clip2seg_neg'         : 'Mask_Clip2SegNeg',
         'codeformer'                : 'Enhance_CodeFormer',
         'restoreformer'             : 'Enhance_RestoreFormer',
         'restoreformerplusplus'     : 'Enhance_RestoreFormerPlusPlus',
@@ -325,9 +326,14 @@ class ProcessMgr():
         if num_faces_found == 0:
             return num_faces_found, frame
 
-        maskprocessor = next((x for x in self.processors if x.processorname == 'clip2seg'), None)
-        if maskprocessor is not None:
-            temp_frame = self.process_mask(maskprocessor, frame, temp_frame)
+        maskprocessor_neg = next((x for x in self.processors if x.processorname == 'clip2seg_neg'), None)
+        if maskprocessor_neg is not None:
+            temp_frame = self.process_mask_neg(maskprocessor_neg, frame, temp_frame)
+
+        maskprocessor_pos = next((x for x in self.processors if x.processorname == 'clip2seg_pos'), None)
+        if maskprocessor_pos is not None:
+            temp_frame = self.process_mask_pos(maskprocessor_pos, frame, temp_frame)
+        
         return num_faces_found, temp_frame
 
 
@@ -437,8 +443,18 @@ class ProcessMgr():
         return paste_face.astype(np.uint8)
 
 
-    def process_mask(self, processor, frame:Frame, target:Frame):
-        img_mask = processor.Run(frame, self.options.masking_text)
+    def process_mask_neg(self, processor, frame:Frame, target:Frame):
+        img_mask = processor.Run(frame, self.options.masking_text_neg)
+        img_mask = cv2.resize(img_mask, (target.shape[1], target.shape[0]))
+        img_mask = np.reshape(img_mask, [img_mask.shape[0],img_mask.shape[1],1])
+
+        target = target.astype(np.float32)
+        result = (1-img_mask) * target
+        result += img_mask * frame.astype(np.float32)
+        return np.uint8(result)
+
+    def process_mask_pos(self, processor, frame:Frame, target:Frame):
+        img_mask = processor.Run(frame, self.options.masking_text_pos)
         img_mask = cv2.resize(img_mask, (target.shape[1], target.shape[0]))
         img_mask = np.reshape(img_mask, [img_mask.shape[0],img_mask.shape[1],1])
 

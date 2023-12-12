@@ -54,6 +54,7 @@ class Enhance_RestoreFormer():
         ort_outs = self.io_binding.copy_outputs_to_cpu()
         result = ort_outs[0][0]
         del ort_outs 
+        
         # post-process
         result = np.clip(result, -1, 1)
         result = (result + 1) / 2

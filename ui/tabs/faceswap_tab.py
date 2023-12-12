@@ -185,7 +185,7 @@ def faceswap_tab():
                     label="Select post-processing",
                 )
                 ui.globals.ui_blend_ratio = gr.Slider(
-                    0.0, 1.0, value=0.65, label="Original/Enhanced image blend ratio"
+                    0.0, 1.0, value=0.65, label="Upscaler visibility ratio"
                 )
                 with gr.Box():
                     roop.globals.skip_audio = gr.Checkbox(
@@ -201,13 +201,21 @@ def faceswap_tab():
                     )
             with gr.Column(scale=1):
                 chk_useclip = gr.Checkbox(label="Use Text Masking", value=False)
-                clip_text = gr.Textbox(
-                    label="List of objects to mask and restore back on fake image",
+                clip_text_pos = gr.Textbox(
+                    label="Positive prompts",
                     placeholder="cup,hands,hair,banana",
                     elem_id="tooltip",
                 )
+                clip_text_neg = gr.Textbox(
+                    label="Negative prompts",
+                    placeholder="cup,hands,hair,banana",
+                    elem_id="tooltip",
+                )
+                bt_preview_pos_mask = gr.Button("👥 Show Positive Mask Preview", variant="secondary")
+                bt_preview_neg_mask = gr.Button("👥 Show Negative Mask Preview", variant="secondary")
+                
                 gr.Dropdown(["Clip2Seg"], value="Clip2Seg", label="Engine")
-                bt_preview_mask = gr.Button("👥 Show Mask Preview", variant="secondary")
+                
 
         with gr.Row(variant="panel"):
             with gr.Column():
@@ -239,7 +247,8 @@ def faceswap_tab():
         max_face_distance,
         ui.globals.ui_blend_ratio,
         chk_useclip,
-        clip_text,
+        clip_text_pos,
+        clip_text_neg,
         no_face_action,
     ]
     input_faces.select(on_select_input_face, None, None).then(
@@ -310,9 +319,16 @@ def faceswap_tab():
     bt_add_local.click(
         fn=on_add_local_folder, inputs=[local_folder], outputs=[bt_destfiles]
     )
-    bt_preview_mask.click(
-        fn=on_preview_mask,
-        inputs=[preview_frame_num, bt_destfiles, clip_text],
+
+    bt_preview_pos_mask.click(
+        fn=on_preview_pos_mask,
+        inputs=[preview_frame_num, bt_destfiles, clip_text_pos],
+        outputs=[previewimage],
+    )
+
+    bt_preview_neg_mask.click(
+        fn=on_preview_neg_mask,
+        inputs=[preview_frame_num, bt_destfiles, clip_text_neg],
         outputs=[previewimage],
     )
 
@@ -326,7 +342,8 @@ def faceswap_tab():
             max_face_distance,
             ui.globals.ui_blend_ratio,
             chk_useclip,
-            clip_text,
+            clip_text_pos,
+            clip_text_neg,
             video_swapping_method,
             no_face_action,
         ],
@@ -615,7 +632,8 @@ def on_preview_frame_changed(
     face_distance,
     blend_ratio,
     use_clip,
-    clip_text,
+    clip_text_pos,
+    clip_text_neg,
     no_face_action,
 ):
     global SELECTED_INPUT_FACE_INDEX, is_processing
@@ -661,17 +679,20 @@ def on_preview_frame_changed(
     roop.globals.blend_ratio = blend_ratio
     roop.globals.no_face_action = index_of_no_face_action(no_face_action)
 
-    if use_clip and clip_text is None or len(clip_text) < 1:
+    if use_clip and (clip_text_pos is None or len(clip_text_pos) < 1) and (clip_text_neg is None or len(clip_text_neg) < 1):
         use_clip = False
 
     roop.globals.execution_threads = roop.globals.CFG.max_threads
+    
     current_frame = live_swap(
         current_frame,
         roop.globals.face_swap_mode,
         use_clip,
-        clip_text,
+        clip_text_pos,
+        clip_text_neg,
         SELECTED_INPUT_FACE_INDEX,
     )
+    
     if current_frame is None:
         return None, mask_offsets[0], mask_offsets[1]
     return util.convert_to_gradio(current_frame), mask_offsets[0], mask_offsets[1]
@@ -700,8 +721,8 @@ def on_set_frame(sender: str, frame_num):
     )
 
 
-def on_preview_mask(frame_num, files, clip_text):
-    from roop.core import preview_mask
+def on_preview_pos_mask(frame_num, files, clip_text_pos):
+    from roop.core import preview_mask_pos
 
     global is_processing
 
@@ -716,9 +737,27 @@ def on_preview_mask(frame_num, files, clip_text):
     if current_frame is None:
         return None
 
-    current_frame = preview_mask(current_frame, clip_text)
+    current_frame = preview_mask_pos(current_frame, clip_text_pos)
     return util.convert_to_gradio(current_frame)
 
+def on_preview_neg_mask(frame_num, files, clip_text_neg):
+    from roop.core import preview_mask_neg
+
+    global is_processing
+
+    if is_processing:
+        return None
+
+    filename = files[selected_preview_index].name
+    if util.is_video(filename) or filename.lower().endswith("gif"):
+        current_frame = get_video_frame(filename, frame_num)
+    else:
+        current_frame = get_image_frame(filename)
+    if current_frame is None:
+        return None
+
+    current_frame = preview_mask_neg(current_frame, clip_text_neg)
+    return util.convert_to_gradio(current_frame)
 
 def on_clear_input_faces():
     ui.globals.ui_input_thumbs.clear()
@@ -759,7 +798,8 @@ def start_swap(
     face_distance,
     blend_ratio,
     use_clip,
-    clip_text,
+    clip_text_pos,
+    clip_text_neg,
     processing_method,
     no_face_action,
     progress=gr.Progress(track_tqdm=False),
@@ -785,7 +825,8 @@ def start_swap(
     roop.globals.skip_audio = skip_audio
     roop.globals.face_swap_mode = translate_swap_mode(detection)
     roop.globals.no_face_action = index_of_no_face_action(no_face_action)
-    if use_clip and clip_text is None or len(clip_text) < 1:
+    
+    if use_clip and (clip_text_pos is None or len(clip_text_pos) < 1) and (clip_text_neg is None or len(clip_text_neg) < 1):
         use_clip = False
 
     if roop.globals.face_swap_mode == "selected":
@@ -805,7 +846,8 @@ def start_swap(
     batch_process(
         list_files_process,
         use_clip,
-        clip_text,
+        clip_text_pos,
+        clip_text_neg,
         processing_method == "In-Memory processing",
         progress,
     )
